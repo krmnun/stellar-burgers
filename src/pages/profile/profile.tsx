@@ -1,7 +1,7 @@
 import { ProfileUI } from '@ui-pages';
 import { FC, SyntheticEvent, useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../../services/store';
-import { updateUserData } from '../../services/reducers/userSlice';
+import { updateUser } from '../../services/reducers/userSlice';
 import { useNavigate } from 'react-router-dom';
 
 export const Profile: FC = () => {
@@ -31,7 +31,7 @@ export const Profile: FC = () => {
   const handleSubmit = (e: SyntheticEvent) => {
     e.preventDefault();
 
-    dispatch(updateUserData({ ...formValue }));
+    dispatch(updateUser({ ...formValue }));
 
     setFormValue({
       name: user!.name,

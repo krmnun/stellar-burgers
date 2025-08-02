@@ -1,22 +1,14 @@
-import { FC, useEffect } from 'react';
+import { FC } from 'react';
 import { Preloader } from '../ui/preloader';
 import { IngredientDetailsUI } from '../ui/ingredient-details';
 import { Navigate, useParams } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../services/store';
-import { fetchIngredients } from '../../services/reducers/ingredientsSlice';
+import { useAppSelector } from '../../services/store';
 
 export const IngredientDetails: FC = () => {
-  const dispatch = useAppDispatch();
   const { ingredients, isLoading } = useAppSelector(
     (state) => state.ingredientsReducer
   );
   const { id } = useParams();
-
-  useEffect(() => {
-    if (!ingredients.length) {
-      dispatch(fetchIngredients());
-    }
-  }, []);
 
   const ingredientData = ingredients.find((item) => item._id === id);
 

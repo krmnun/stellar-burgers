@@ -5,118 +5,225 @@ import {
   loginUserApi,
   logoutApi,
   registerUserApi,
-  updateUserApi
+  getUserApi,
+  updateUserApi,
+  refreshToken
 } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import { TOrder, TUser } from '@utils-types';
-import { deleteCookie, setCookie } from '../../utils/cookie';
+import { deleteCookie, getCookie, setCookie } from '../../utils/cookie';
 
 type TUserState = {
-  isLoading: boolean;
-  isError: boolean;
-  refreshToken: string;
-  accessToken: string;
   user: TUser | null;
+  isAuthChecked: boolean;
+  isLoading: boolean;
+  error: string | null;
   orders: TOrder[];
-  orderRequest: boolean;
 };
 
 const initialState: TUserState = {
-  isLoading: false,
-  isError: false,
-  refreshToken: localStorage.getItem('refreshToken') ?? '',
-  accessToken: '',
   user: null,
-  orders: [],
-  orderRequest: false
+  isAuthChecked: false,
+  isLoading: false,
+  error: null,
+  orders: []
 };
+
+export const checkUserAuth = createAsyncThunk(
+  'user/checkAuth',
+  async (_, { rejectWithValue }) => {
+    try {
+      const userData = await getUserApi();
+      return userData.user;
+    } catch (error) {
+      if ((error as Error).message === 'jwt expired') {
+        try {
+          const refreshData = await refreshToken();
+          setCookie('accessToken', refreshData.accessToken);
+          localStorage.setItem('refreshToken', refreshData.refreshToken);
+          const userData = await getUserApi();
+          return userData.user;
+        } catch (refreshError) {
+          return rejectWithValue('Failed to refresh token');
+        }
+      }
+      return rejectWithValue('Not authenticated');
+    }
+  }
+);
 
 export const register = createAsyncThunk(
   'user/register',
-  async (data: TRegisterData) => await registerUserApi(data)
+  async (
+    data: {
+      email: string;
+      password: string;
+      name: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await registerUserApi(data);
+      setCookie('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      return response.user;
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
 );
 
 export const login = createAsyncThunk(
   'user/login',
-  async (data: TLoginData) => await loginUserApi(data)
-);
-
-export const updateUserData = createAsyncThunk(
-  'user/updateUserData',
-  async (user: Partial<TRegisterData>) => await updateUserApi(user)
-);
-
-export const getUserOrders = createAsyncThunk(
-  'user/getOrders',
-  async () => await getOrdersApi()
+  async (data: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const response = await loginUserApi(data);
+      setCookie('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      return response.user;
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
 );
 
 export const logout = createAsyncThunk(
   'user/logout',
-  async () => await logoutApi()
+  async (_, { rejectWithValue }) => {
+    try {
+      await logoutApi();
+      deleteCookie('accessToken');
+      localStorage.removeItem('refreshToken');
+      return null;
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
 );
 
-export const userSlice = createSlice({
+export const updateUser = createAsyncThunk(
+  'user/update',
+  async (
+    data: { email?: string; name?: string; password?: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await updateUserApi(data);
+      return response.user;
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
+export const fetchUserOrders = createAsyncThunk(
+  'user/fetchOrders',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getOrdersApi();
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
+const userSlice = createSlice({
   name: 'user',
   initialState,
-  reducers: {},
+  reducers: {
+    resetError: (state) => {
+      state.error = null;
+    }
+  },
   extraReducers: (builder) => {
     builder
-      .addCase(login.pending, (state) => {
+      // Проверка аутентификации
+      .addCase(checkUserAuth.pending, (state) => {
         state.isLoading = true;
-        state.isError = false;
       })
-      .addCase(login.fulfilled, (state, action) => {
+      .addCase(checkUserAuth.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isAuthChecked = true;
         state.isLoading = false;
-        state.refreshToken = action.payload.refreshToken;
-        localStorage.setItem('refreshToken', action.payload.refreshToken);
-        state.accessToken = action.payload.accessToken;
-        setCookie('accessToken', action.payload.accessToken);
-        state.user = action.payload.user;
       })
-      .addCase(login.rejected, (state) => {
+      .addCase(checkUserAuth.rejected, (state, action) => {
+        state.isAuthChecked = true;
         state.isLoading = false;
-        state.isError = true;
+        state.error = action.payload as string;
       })
+
+      // Регистрация
       .addCase(register.pending, (state) => {
         state.isLoading = true;
-        state.isError = false;
       })
       .addCase(register.fulfilled, (state, action) => {
+        state.user = action.payload;
         state.isLoading = false;
-        state.refreshToken = action.payload.refreshToken;
-        localStorage.setItem('refreshToken', action.payload.refreshToken);
-        state.accessToken = action.payload.accessToken;
-        setCookie('accessToken', action.payload.accessToken);
-        state.user = action.payload.user;
+        state.error = null;
       })
-      .addCase(register.rejected, (state) => {
+      .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
-        state.isError = true;
+        state.error = action.payload as string;
       })
-      .addCase(updateUserData.fulfilled, (state, action) => {
-        state.user = action.payload.user;
+
+      // Вход
+      .addCase(login.pending, (state) => {
+        state.isLoading = true;
       })
-      .addCase(getUserOrders.pending, (state) => {
-        state.orderRequest = true;
+      .addCase(login.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isLoading = false;
+        state.error = null;
       })
-      .addCase(getUserOrders.fulfilled, (state, action) => {
-        state.orderRequest = false;
-        state.orders = action.payload;
+      .addCase(login.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       })
-      .addCase(getUserOrders.rejected, (state) => {
-        state.orderRequest = false;
-        state.orders = [];
+
+      // Выход
+      .addCase(logout.pending, (state) => {
+        state.isLoading = true;
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
-        state.refreshToken = '';
-        localStorage.removeItem('refreshToken');
-        state.accessToken = '';
-        deleteCookie('accessToken');
+        state.isLoading = false;
+        state.error = null;
         state.orders = [];
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Обновление данных пользователя
+      .addCase(updateUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(updateUser.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(updateUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+
+      // Получение заказов пользователя
+      .addCase(fetchUserOrders.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchUserOrders.fulfilled, (state, action) => {
+        state.orders = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(fetchUserOrders.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   }
 });
 
+export const { resetError } = userSlice.actions;
 export default userSlice.reducer;

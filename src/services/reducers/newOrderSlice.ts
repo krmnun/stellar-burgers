@@ -48,16 +48,29 @@ export const newOrderSlice = createSlice({
         : []
   },
   reducers: {
-    addIngredient: (state, action: PayloadAction<TIngredient>) => {
-      action.payload.type !== 'bun'
-        ? (state.constructorItems.ingredients = [
-            ...state.constructorItems.ingredients,
-            { ...action.payload, id: action.payload._id }
-          ])
-        : (state.constructorItems.bun = {
+    addIngredient: {
+      reducer: (
+        state,
+        action: PayloadAction<TIngredient & { uniqueId: string }>
+      ) => {
+        if (action.payload.type === 'bun') {
+          state.constructorItems.bun = {
             ...action.payload,
-            id: nanoid()
+            id: action.payload.uniqueId
+          };
+        } else {
+          state.constructorItems.ingredients.push({
+            ...action.payload,
+            id: action.payload.uniqueId
           });
+        }
+      },
+      prepare: (ingredient: TIngredient) => ({
+        payload: {
+          ...ingredient,
+          uniqueId: nanoid()
+        }
+      })
     },
     moveIngredient: (
       state,
