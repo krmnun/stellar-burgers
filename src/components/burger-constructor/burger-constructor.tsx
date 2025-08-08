@@ -12,12 +12,12 @@ import { useLocation, useNavigate } from 'react-router-dom';
 export const BurgerConstructor: FC = () => {
   const dispatch = useAppDispatch();
   const { constructorItems, orderRequest, orderModalData } = useAppSelector(
-    (state) => state.newOrderReducer
+    (state) => state.order
   );
   const newOrderData = useAppSelector((state) =>
-    getNewOrderData({ newOrder: state.newOrderReducer })
+    getNewOrderData({ newOrder: state.order })
   );
-  const { user, isLoading } = useAppSelector((state) => state.userReducer);
+  const { user, isLoading } = useAppSelector((state) => state.user);
   const navigate = useNavigate();
   const location = useLocation();
 

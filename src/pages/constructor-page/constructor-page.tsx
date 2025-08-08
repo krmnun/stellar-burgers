@@ -6,7 +6,7 @@ import { FC } from 'react';
 import { useAppSelector } from '../../services/store';
 
 export const ConstructorPage: FC = () => {
-  const { isLoading } = useAppSelector((state) => state.ingredientsReducer);
+  const { isLoading } = useAppSelector((state) => state.ingredients);
 
   return (
     <>

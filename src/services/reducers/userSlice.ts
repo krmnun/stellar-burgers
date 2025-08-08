@@ -1,16 +1,15 @@
 import {
   TLoginData,
   TRegisterData,
-  getOrdersApi,
+  getUserApi,
   loginUserApi,
   logoutApi,
   registerUserApi,
-  getUserApi,
   updateUserApi,
   refreshToken
 } from '@api';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import { TOrder, TUser } from '@utils-types';
+import { TUser } from '@utils-types';
 import { deleteCookie, getCookie, setCookie } from '../../utils/cookie';
 
 type TUserState = {
@@ -18,15 +17,13 @@ type TUserState = {
   isAuthChecked: boolean;
   isLoading: boolean;
   error: string | null;
-  orders: TOrder[];
 };
 
 const initialState: TUserState = {
   user: null,
   isAuthChecked: false,
   isLoading: false,
-  error: null,
-  orders: []
+  error: null
 };
 
 export const checkUserAuth = createAsyncThunk(
@@ -55,11 +52,7 @@ export const checkUserAuth = createAsyncThunk(
 export const register = createAsyncThunk(
   'user/register',
   async (
-    data: {
-      email: string;
-      password: string;
-      name: string;
-    },
+    data: { email: string; password: string; name: string },
     { rejectWithValue }
   ) => {
     try {
@@ -116,17 +109,6 @@ export const updateUser = createAsyncThunk(
   }
 );
 
-export const fetchUserOrders = createAsyncThunk(
-  'user/fetchOrders',
-  async (_, { rejectWithValue }) => {
-    try {
-      return await getOrdersApi();
-    } catch (error) {
-      return rejectWithValue((error as Error).message);
-    }
-  }
-);
-
 const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -137,7 +119,6 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Проверка аутентификации
       .addCase(checkUserAuth.pending, (state) => {
         state.isLoading = true;
       })
@@ -151,8 +132,6 @@ const userSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-
-      // Регистрация
       .addCase(register.pending, (state) => {
         state.isLoading = true;
       })
@@ -165,8 +144,6 @@ const userSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-
-      // Вход
       .addCase(login.pending, (state) => {
         state.isLoading = true;
       })
@@ -179,8 +156,6 @@ const userSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-
-      // Выход
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
       })
@@ -188,14 +163,11 @@ const userSlice = createSlice({
         state.user = null;
         state.isLoading = false;
         state.error = null;
-        state.orders = [];
       })
       .addCase(logout.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-
-      // Обновление данных пользователя
       .addCase(updateUser.pending, (state) => {
         state.isLoading = true;
       })
@@ -205,20 +177,6 @@ const userSlice = createSlice({
         state.error = null;
       })
       .addCase(updateUser.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload as string;
-      })
-
-      // Получение заказов пользователя
-      .addCase(fetchUserOrders.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(fetchUserOrders.fulfilled, (state, action) => {
-        state.orders = action.payload;
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(fetchUserOrders.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

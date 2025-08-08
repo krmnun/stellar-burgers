@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 
 export const Profile: FC = () => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.userReducer);
+  const { user } = useAppSelector((state) => state.user);
   const navigate = useNavigate();
 
   const [formValue, setFormValue] = useState({

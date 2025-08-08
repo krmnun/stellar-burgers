@@ -10,9 +10,9 @@ import { fetchIngredients } from '../../services/reducers/ingredientsSlice';
 export const OrderInfo: FC = () => {
   const { number } = useParams();
   const dispatch = useAppDispatch();
-  const { ingredients } = useAppSelector((state) => state.ingredientsReducer);
+  const { ingredients } = useAppSelector((state) => state.ingredients);
   const orderData = useAppSelector((state) =>
-    state.feedReducer.orders.find((item) => item.number === Number(number))
+    state.feed.orders.find((item) => item.number === Number(number))
   );
 
   useEffect(() => {

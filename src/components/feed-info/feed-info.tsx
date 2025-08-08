@@ -11,7 +11,7 @@ const getOrders = (orders: TOrder[], status: string): number[] =>
     .slice(0, 20);
 
 export const FeedInfo: FC = () => {
-  const { feed, orders } = useAppSelector((state) => state.feedReducer);
+  const { feed, orders } = useAppSelector((state) => state.feed);
 
   const readyOrders = getOrders(orders, 'done');
 

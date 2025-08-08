@@ -40,127 +40,99 @@ const App = () => {
   }, [dispatch]);
 
   return (
-    <Routes location={background || location}>
-      <Route
-        path='/'
-        element={
-          <div className={styles.app}>
-            <AppHeader />
-            <Outlet />
-          </div>
-        }
-      >
-        <Route index element={<ConstructorPage />} />
+    <>
+      {/* Main Routes */}
+      <Routes location={background || location}>
         <Route
-          path='feed'
+          path='/'
           element={
-            <>
-              <Feed />
-            </>
-          }
-        />
-        <Route
-          path='feed/:number'
-          element={
-            <InfoAboutFeed onClose={() => navigate('/feed')}>
-              <OrderInfo />
-            </InfoAboutFeed>
-          }
-        />
-        <Route
-          path='ingredients/:id'
-          element={
-            <InfoAboutIngredient onClose={() => navigate('/')}>
-              <IngredientDetails />
-            </InfoAboutIngredient>
-          }
-        />
-        <Route
-          path='login'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <Login />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path='register'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <Register />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path='forgot-password'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <ForgotPassword />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path='reset-password'
-          element={
-            <ProtectedRoute onlyUnAuth>
-              <ResetPassword />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path='profile'
-          element={
-            <ProtectedRoute>
+            <div className={styles.app}>
+              <AppHeader />
               <Outlet />
-            </ProtectedRoute>
+            </div>
           }
         >
-          <Route index element={<Profile />} />
+          <Route index element={<ConstructorPage />} />
+          <Route path='feed' element={<Feed />} />
           <Route
-            path='orders'
+            path='login'
             element={
-              <>
-                <ProfileOrders />
-                <Outlet />
-              </>
+              <ProtectedRoute onlyUnAuth>
+                <Login />
+              </ProtectedRoute>
             }
           />
+          <Route
+            path='register'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <Register />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='forgot-password'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <ForgotPassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='reset-password'
+            element={
+              <ProtectedRoute onlyUnAuth>
+                <ResetPassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='profile'
+            element={
+              <ProtectedRoute>
+                <Outlet />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Profile />} />
+            <Route path='orders' element={<ProfileOrders />} />
+          </Route>
+          <Route path='*' element={<NotFound404 />} />
         </Route>
-        <Route path='*' element={<NotFound404 />} />
-      </Route>
+      </Routes>
 
-      {/* Отдельные маршруты для модальных окон */}
+      {/* Modal Routes */}
       {background && (
-        <>
+        <Routes>
           <Route
             path='/ingredients/:id'
             element={
-              <InfoAboutIngredient onClose={() => navigate(-1)}>
+              <Modal title='Ingredient Details' onClose={() => navigate(-1)}>
                 <IngredientDetails />
-              </InfoAboutIngredient>
+              </Modal>
             }
           />
           <Route
             path='/feed/:number'
             element={
-              <InfoAboutFeed onClose={() => navigate(-1)}>
+              <Modal title='Order Details' onClose={() => navigate(-1)}>
                 <OrderInfo />
-              </InfoAboutFeed>
+              </Modal>
             }
           />
           <Route
             path='/profile/orders/:number'
             element={
               <ProtectedRoute>
-                <Modal title='' onClose={() => navigate(-1)}>
+                <Modal title='Order Details' onClose={() => navigate(-1)}>
                   <OrderInfo />
                 </Modal>
               </ProtectedRoute>
             }
           />
-        </>
+        </Routes>
       )}
-    </Routes>
+    </>
   );
 };
 

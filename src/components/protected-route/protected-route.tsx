@@ -13,7 +13,7 @@ export default function ProtectedRoute({
 }: ProtectedRouteProps) {
   const location = useLocation();
   const { user, isLoading, isAuthChecked } = useAppSelector(
-    (state) => state.userReducer
+    (state) => state.user
   );
   const from = location.state?.from || '/';
 
